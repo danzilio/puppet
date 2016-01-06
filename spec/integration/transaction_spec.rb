@@ -294,6 +294,32 @@ describe Puppet::Transaction do
     Puppet::FileSystem.exist?(fname).should be_true
   end
 
+  it "does not trigger skip-tagged resources" do
+    catalog = mk_catalog
+
+    file = Puppet::Type.type(:file).new(
+      :name => tmpfile("file"),
+      :ensure => "file",
+      :backup => false
+    )
+
+    fname = tmpfile("exec")
+
+    exec = Puppet::Type.type(:exec).new(
+      :name => touch(fname),
+      :path => Puppet.features.microsoft_windows? ? "#{ENV['windir']}/system32" : "/usr/bin:/bin",
+      :schedule => "monthly",
+      :subscribe => Puppet::Resource.new("file", file.name)
+    )
+
+    Puppet[:skip_tags] = "skipme"
+    exec.tag("skipme")
+
+    catalog.add_resource(file, exec)
+    catalog.apply
+    expect(Puppet::FileSystem.exist?(fname)).to be_falsey
+  end
+
   it "should not attempt to evaluate resources with failed dependencies" do
 
     exec = Puppet::Type.type(:exec).new(

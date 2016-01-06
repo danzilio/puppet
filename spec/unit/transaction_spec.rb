@@ -351,6 +351,11 @@ describe Puppet::Transaction do
       @transaction.should be_skip(@resource)
     end
 
+    it "should skip resources tagged with the skip tags" do
+      @transaction.stubs(:skip_tags?).returns(true)
+      expect(@transaction).to be_skip(@resource)
+    end
+
     it "should skip unscheduled resources" do
       @transaction.stubs(:scheduled?).returns(false)
       @transaction.should be_skip(@resource)
